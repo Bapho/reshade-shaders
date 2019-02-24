@@ -54,7 +54,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 	
 	if (amount > 0.0){	
 		float unique = colorSum1 + uniquePos1;
-		color = applyNoise(color, float2(unique, unique), amount);
+		color = applyNoise(color, float2(unique, unique * 0.01), amount);
 	}
 	
 	return color;
