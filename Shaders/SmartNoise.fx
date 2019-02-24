@@ -1,5 +1,5 @@
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// SmartNoise by Bapho - https://github.com/Bapho 
+// SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // I created this shader because i did not liked the the noise 
 // behaviour of most shaders. Time based noise shaders, which are 
