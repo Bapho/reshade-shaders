@@ -1,6 +1,6 @@
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // I created this shader because i did not liked the the noise 
 // behaviour of most shaders. Time based noise shaders, which are 
 // changing the noise pattern every frame, are very noticeable when the 
@@ -10,7 +10,7 @@
 // unique position of the current texture in combination with the color
 // to get a unique seed for the noise function. The result is a noise 
 // pattern that is only changing if the color of the position is changing.
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 uniform float noise <
 	ui_type = "drag";
