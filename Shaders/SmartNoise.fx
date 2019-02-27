@@ -46,10 +46,10 @@ float3 applyNoise(float3 color, float2 uv, float uq, float colorSum, float amoun
 			amount *= (sub / colorSum);
 			sub *= (sub / colorSum);
 		} else {
-		   amount *= (colorSum / sub);
-		   sub *= (colorSum / sub);
-		}
-	}
+			amount *= (colorSum / sub);
+			sub *= (colorSum / sub);
+        }
+    }
     
     float ran = gold_noise(uv, uq);
     float add = ran * amount;
@@ -60,7 +60,8 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 {
 	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
 	float colorSum1 = color.r + color.g + color.b;
-	float uniquePos1 = (ReShade::ScreenSize.x * (texcoord.y - 1.0)) + texcoord.x;
+	float uniquePos1 = (ReShade::ScreenSize.x * 32.0) + 
+				(ReShade::ScreenSize.x * (texcoord.y - 1.0)) + texcoord.x;
 	
 	// black or white pixels will get less noise than colored ones
 	float amount;
@@ -73,7 +74,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 		// red pixels will get less noise 
 		amount *= (1.0 - (color.r * 0.5));
 	} else {
-		amount *= 0.5;
+		amount *= 0.8;
 	}
 	
 	if (amount > 0.0){
