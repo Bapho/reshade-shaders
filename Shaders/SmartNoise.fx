@@ -71,7 +71,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 	}
 	if (lessNoiseOnRed){
 		// red pixels will get less noise 
-		amount *= (1.0 - color.r);
+		amount *= (1.0 - (color.r * 0.5));
 	} else {
 		amount *= 0.5;
 	}
