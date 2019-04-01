@@ -96,3 +96,4 @@ technique SmartNoise
 		PixelShader  = SmartNoise;
 	}
 }
+
