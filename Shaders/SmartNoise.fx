@@ -64,7 +64,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 	float2 coordinate = pos.xy * ReShade::ScreenSize.y * 2.0;
 
 	// average noise luminance to subtract
-    float sub = (0.5 * amount);
+	float sub = (0.5 * amount);
     
 	// "noise clipping"
 	if (luminance - sub < 0.0){
