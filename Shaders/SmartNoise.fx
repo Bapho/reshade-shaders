@@ -61,7 +61,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 	
 	// not sure why, but this fictive position will avoid unwanted noise 
 	// patterns in certain scenarios in comparison to a simple use of "pos"
-	float2 coordinate = pos.xy * ReShade::ScreenSize.y * 2.0;
+	float2 coordinate = texcoord * ReShade::ScreenSize.y * 2.0;
 
 	// average noise luminance to subtract
 	float sub = (0.5 * amount);
