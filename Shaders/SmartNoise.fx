@@ -13,10 +13,10 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 uniform float noise <
-	ui_type = "drag";
-	ui_min = 0.0; ui_max = 4.0;
-	ui_label = "Amount of noise";
-> = 1.5;
+    ui_type = "drag";
+    ui_min = 0.0; ui_max = 4.0;
+    ui_label = "Amount of noise";
+> = 1.0;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -33,66 +33,66 @@ float gold_noise(float2 coordinate, float seed){
 
 float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
 {
-	float amount = noise * 0.08;
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
-	
-	// the luminance/brightness
-	float luminance = (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
-	
-	// calculating a unique position
-	float uniquePos = (ReShade::ScreenSize.x * texcoord.y) + texcoord.x;
-	
-	// adjusting "noise contrast"
-	if (luminance < 0.5){
-		amount *= (luminance / 0.5);
-	} else {
-		amount *= ((1.0 - luminance) / 0.5);
-	}
-	
-	// reddishly pixels will get less noise 
-	//amount *= (1.0 - (color.r * 0.5));
-	float redDiff = color.r - ((color.g + color.b) / 2.0);
-	if (redDiff > 0.0){
-		amount *= (1.0 - (redDiff * 0.5));
-	}
-
-	// a very low unique seed will lead to slow noise pattern changes on slow moving color gradients
-	float uniqueSeed = (luminance + uniquePos) * 0.00001;
-	
-	// not sure why, but this fictive position will avoid unwanted noise 
-	// patterns in certain scenarios in comparison to a simple use of "pos"
-	float2 coordinate = texcoord * ReShade::ScreenSize.y * 2.0;
-
-	// average noise luminance to subtract
-	float sub = (0.5 * amount);
+    float amount = noise * 0.08;
+    float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
     
-	// "noise clipping"
-	if (luminance - sub < 0.0){
-	   amount *= (luminance / sub);
-	   sub *= (luminance / sub);
-	} else if (luminance + sub > 1.0){
-		if (luminance > sub){
-			amount *= (sub / luminance);
-			sub *= (sub / luminance);
-		} else {
-			amount *= (luminance / sub);
-			sub *= (luminance / sub);
+    // the luminance/brightness
+    float luminance = (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
+    
+    // calculating a unique position
+    float uniquePos = (ReShade::ScreenSize.x * texcoord.y) + texcoord.x;
+    
+    float depthSeed = ReShade::GetLinearizedDepth(texcoord) * ReShade::ScreenSize.y;
+    
+    // adjusting "noise contrast"
+    if (luminance < 0.5){
+        amount *= (luminance / 0.5);
+    } else {
+        amount *= ((1.0 - luminance) / 0.5);
+    }
+    
+    // reddishly pixels will get less noise 
+    float redDiff = color.r - ((color.g + color.b) / 2.0);
+    if (redDiff > 0.0){
+        amount *= (1.0 - (redDiff * 0.5));
+    }
+
+    // a very low unique seed will lead to slow noise pattern changes on slow moving color gradients
+    float uniqueSeed = ((luminance * ReShade::ScreenSize.y) + uniquePos + depthSeed) * 0.0001;
+    
+    // a high fictive position will give good golden noise results
+    float2 coordinate = texcoord * ReShade::ScreenSize.y * 2.0;
+
+    // average noise luminance to subtract
+    float sub = (0.5 * amount);
+    
+    // "noise clipping"
+    if (luminance - sub < 0.0){
+       amount *= (luminance / sub);
+       sub *= (luminance / sub);
+    } else if (luminance + sub > 1.0){
+        if (luminance > sub){
+            amount *= (sub / luminance);
+            sub *= (sub / luminance);
+        } else {
+            amount *= (luminance / sub);
+            sub *= (luminance / sub);
         }
     }
 
-	// calculating and adding/subtracting the golden noise
+    // calculating and adding/subtracting the golden noise
     float ran = gold_noise(coordinate, uniqueSeed);
     float add = ran * amount;
     color += (add - sub);
-	
-	return color;
+    
+    return color;
 }
 
 technique SmartNoise
 {
         pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader  = SmartNoise;
-	}
+    {
+        VertexShader = PostProcessVS;
+        PixelShader  = SmartNoise;
+    }
 }
