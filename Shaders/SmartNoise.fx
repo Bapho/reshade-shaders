@@ -1,15 +1,15 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
+// SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/view/3tBGzw
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// I created this shader because i did not liked the the noise 
-// behaviour of most shaders. Time based noise shaders, which are 
-// changing the noise pattern every frame, are very noticeable when the 
-// "image isn't moving". "Static shaders", which are never changing 
-// the noise pattern, are very noticeable when the "image is moving". 
-// So i was searching a way to bypass those disadvantages. I used the 
-// unique position of the current texture in combination with the color
-// to get a unique seed for the noise function. The result is a noise 
-// pattern that is only changing if the color of the position is changing.
+// I created this shader because i did not liked the the noise behaviour
+// of most shaders. Time based noise shaders, which are changing the noise
+// pattern every frame, are very noticeable when the "image isn't moving".
+// "Static shaders", which are never changing the noise pattern, are very
+// noticeable when the "image is moving". So i was searching a way to
+// bypass those disadvantages. I used the unique position of the current
+// texture in combination with the color and depth to get a unique seed
+// for the noise function. The result is a noise pattern that is only
+// changing when the color or depth of the position is changing.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 uniform float noise <
@@ -22,7 +22,6 @@ uniform float noise <
 
 #include "ReShade.fxh"
 
-//precision lowp float;
 static const float PHI = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
 static const float PI  = 3.14159265358979323846264 * 00000.1; // PI
 static const float SQ2 = 1.41421356237309504880169 * 10000.0; // Square Root of Two
@@ -42,6 +41,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
     // calculating a unique position
     float uniquePos = (ReShade::ScreenSize.x * texcoord.y) + texcoord.x;
     
+    // depth is also used
     float depthSeed = ReShade::GetLinearizedDepth(texcoord) * ReShade::ScreenSize.y;
     
     // adjusting "noise contrast"
