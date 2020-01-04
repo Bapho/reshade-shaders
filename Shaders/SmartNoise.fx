@@ -84,7 +84,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 
     // calculating and adding/subtracting the golden noise
     float ran = gold_noise(coordinate, uniqueSeed);
-	float add = saturate(ran * amount);
+    float add = saturate(ran * amount);
     color += (add - sub);
     
     return color;
