@@ -39,7 +39,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
     float luminance = (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
     
     // calculating a unique position
-    float uniquePos = (ReShade::ScreenSize.x * texcoord.y) + texcoord.x;
+    float uniquePos = (ReShade::ScreenSize.x * pos.y) + pos.x;
     
     // depth is also used
     float depthSeed = ReShade::GetLinearizedDepth(texcoord) * ReShade::ScreenSize.y;
@@ -51,17 +51,19 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
         amount *= ((1.0 - luminance) / 0.5);
     }
     
-    // reddishly pixels will get less noise 
+    // reddish pixels will get less noise 
     float redDiff = color.r - ((color.g + color.b) / 2.0);
     if (redDiff > 0.0){
         amount *= (1.0 - (redDiff * 0.5));
     }
 
     // a very low unique seed will lead to slow noise pattern changes on slow moving color gradients
-    float uniqueSeed = ((luminance * ReShade::ScreenSize.y) + uniquePos + depthSeed) * 0.0001;
-    
-    // a high fictive position will give good golden noise results
-    float2 coordinate = texcoord * ReShade::ScreenSize.y * 2.0;
+    float uniqueSeed = ((luminance * ReShade::ScreenSize.y) + uniquePos + depthSeed) *
+	0.0001;
+	//0.00000001;
+	
+	// using a fictive coordinate as a workaround to fix a pattern bug
+	float2 coordinate = float2(pos.x, pos.y * 1.001253543);
 
     // average noise luminance to subtract
     float sub = (0.5 * amount);
@@ -82,7 +84,7 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 
     // calculating and adding/subtracting the golden noise
     float ran = gold_noise(coordinate, uniqueSeed);
-    float add = ran * amount;
+	float add = saturate(ran * amount);
     color += (add - sub);
     
     return color;
