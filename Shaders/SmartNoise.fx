@@ -59,11 +59,11 @@ float3 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 
     // a very low unique seed will lead to slow noise pattern changes on slow moving color gradients
     float uniqueSeed = ((luminance * ReShade::ScreenSize.y) + uniquePos + depthSeed) *
-	0.0001;
-	//0.00000001;
+    0.0001;
+    //0.00000001;
 	
-	// using a fictive coordinate as a workaround to fix a pattern bug
-	float2 coordinate = float2(pos.x, pos.y * 1.001253543);
+    // using a fictive coordinate as a workaround to fix a pattern bug
+    float2 coordinate = float2(pos.x, pos.y * 1.001253543);
 
     // average noise luminance to subtract
     float sub = (0.5 * amount);
