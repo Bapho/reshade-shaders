@@ -2,11 +2,11 @@
 // SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/view/3tBGzw
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // I created this shader because i did not liked the the noise behaviour
-// of most shaders. Time based noise shaders, which are changing the noise
+// of most shaders. Temporal noise shaders, which are changing the noise
 // pattern every frame, are very noticeable when the "image isn't moving".
-// "Static shaders", which are never changing the noise pattern, are very
-// noticeable when the "image is moving". So i was searching a way to
-// bypass those disadvantages. I used the unique position of the current
+// Fixed pattern noise shaders, which are never changing the noise pattern,
+// are very noticeable when the "image is moving". So i was searching a way
+// to bypass those disadvantages. I used the unique position of the current
 // texture in combination with the color and depth to get a unique seed
 // for the noise function. The result is a noise pattern that is only
 // changing when the color or depth of the position is changing.
