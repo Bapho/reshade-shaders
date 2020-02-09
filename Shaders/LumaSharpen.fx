@@ -16,7 +16,7 @@
 #include "ReShadeUI.fxh"
 
 uniform float sharp_strength < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.1; ui_max = 50.0;
+	ui_min = 0.1; ui_max = 5.0;
 	ui_label = "Shapening strength";
 	ui_tooltip = "Strength of the sharpening";
 
