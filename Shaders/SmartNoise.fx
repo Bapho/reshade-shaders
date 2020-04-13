@@ -143,7 +143,6 @@ float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
         }
         float3 ratio = orig.rgb / orig.rgb;
         color.rgb = sat(color.rgb, SAT * amount);
-        color.rgb = sat(color.rgb, SAT * (ran - 0.5) * amount * 2.0);
     }
     
     return float4(color, 1.0);
