@@ -70,7 +70,6 @@ float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
 {
     float amount = noise * 0.08;
     float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
-    float3 orig = color;
     
     // the luminance/brightness
     float luminance = (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
@@ -138,10 +137,6 @@ float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
     
     // compensating the saturation since the noise is luma noise
     if (compensateSaturation) {
-        if (type == TYPE_BLUE) {
-            ran = gold_noise(coordinate, uniqueSeed);
-        }
-        float3 ratio = orig.rgb / orig.rgb;
         color.rgb = sat(color.rgb, SAT * amount);
     }
     
