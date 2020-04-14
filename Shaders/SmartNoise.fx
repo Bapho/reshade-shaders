@@ -121,7 +121,7 @@ float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
     }
     
     // calculating and adding/subtracting the golden noise
-    if (type == TYPE_MIXED || type == TYPE_GOLDEN) {
+    if (type != TYPE_BLUE) {
         ran = gold_noise(coordinate, uniqueSeed);
         float div = type == 1 ? 1 : balance;
         add = saturate(ran * amount / div);
