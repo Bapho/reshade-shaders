@@ -4,9 +4,6 @@
 // Can be used to display a red screen when being on low life in a video game with a life bar.
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static const float POE_HOR = 0.05;
-static const float POE_VER = 0.95;
-
 uniform float red <
     ui_type = "drag";
     ui_min = 0.0; ui_max = 1.0;
