@@ -23,7 +23,7 @@ uniform float verticalPos <
     ui_min = 0.0; ui_max = 1.0;
     ui_step = 0.001;
     ui_label = "Vertical life bar cap positon";
-> = 0.875;
+> = 0.86;
 
 uniform bool displayPos <
     ui_type = "bool";
@@ -39,7 +39,7 @@ float4 LowLife(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Targe
     float4 color = tex2D(ReShade::BackBuffer, texcoord);
     float4 capColor = tex2D(ReShade::BackBuffer, float2(horizontalPos, verticalPos));
     
-    if (capColor.r < 0.6 || capColor.g > 0.4 || capColor.b > 0.4) {
+    if (capColor.r < 0.25 || capColor.g > 0.25 || capColor.b > 0.25) {
         color.r = lerp(color.r, 1.0, red);
     }
     
