@@ -70,8 +70,8 @@ uniform bool displayPos <
 
 uniform float2 pingpong < source = "pingpong"; min = 1; max = 2; step = 1; >;
 
-float redCap = 0.25;
-float greenBlueCap = 0.6;
+static const float redCap = 0.25;
+static const float greenBlueCap = 0.6;
 
 float4 LowLife(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
 {
