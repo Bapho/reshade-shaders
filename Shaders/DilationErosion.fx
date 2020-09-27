@@ -1,5 +1,5 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// ported and modified by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
+// DilationErosion by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 uniform int type <
@@ -9,16 +9,49 @@ uniform int type <
     ui_label = "Choose a type";
 > = 0;
 
-uniform float amount <
-    ui_type = "drag";
-    ui_min = 0.0; ui_max = 2.5;
-    ui_label = "Amount of dilation/erosion";
-> = 0.25;
+uniform int amount <
+    ui_type = "slider";
+    ui_min = 0; ui_max = 20;
+    ui_label = "Amount";
+> = 10;
+
+uniform int multiplier <
+    ui_type = "slider";
+    ui_min = 1; ui_max = 20;
+    ui_label = "Multiplier";
+> = 1;
+
+uniform int steps <
+    ui_type = "slider";
+    ui_min = 1; ui_max = 3;
+    ui_label = "Steps";
+> = 3;
+
+uniform int quality <
+    ui_type = "combo";
+    ui_items = "Low" "\0"
+               "Medium" "\0"
+               "High" "\0";
+    ui_label = "Quality";
+> = 1;
 
 #include "ReShade.fxh"
 
-float3 dilateErode(float am, float2 texcoord) : SV_Target
+texture texOne { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+texture texTwo { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+texture texThree { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+sampler2D samOne { Texture = texOne; };
+sampler2D samTwo { Texture = texTwo; };
+sampler2D samThree { Texture = texThree; };
+
+float3 dilateErode(int stepCount, sampler sam, float2 texcoord)
 {
+    if (stepCount > steps || amount <= 0.0) {
+        return tex2D(sam, texcoord).rgb;
+    }
+    
+    float am = amount / 32.0 * multiplier / (stepCount * stepCount);
+    
     float2 dz = float2(am / ReShade::ScreenSize.x, am / ReShade::ScreenSize.y);
     
     /*
@@ -29,23 +62,23 @@ float3 dilateErode(float am, float2 texcoord) : SV_Target
     
     */
     
-    float3 A  = tex2D(ReShade::BackBuffer, texcoord + float2(-1, -1) * dz).rgb;
+    float3 A  = tex2D(sam, texcoord + float2(-1, -1) * dz).rgb;
     float3 B;
-    float3 C  = tex2D(ReShade::BackBuffer, texcoord + float2(+1, -1) * dz).rgb;
+    float3 C  = tex2D(sam, texcoord + float2(+1, -1) * dz).rgb;
     float3 D;
-    float3 E  = tex2D(ReShade::BackBuffer, texcoord + float2(+0, +0) * dz).rgb;
+    float3 E  = tex2D(sam, texcoord + float2(+0, +0) * dz).rgb;
     float3 F;
-    float3 G  = tex2D(ReShade::BackBuffer, texcoord + float2(-1, +1) * dz).rgb;
+    float3 G  = tex2D(sam, texcoord + float2(-1, +1) * dz).rgb;
     float3 H;
-    float3 I  = tex2D(ReShade::BackBuffer, texcoord + float2(+1, +1) * dz).rgb;
+    float3 I  = tex2D(sam, texcoord + float2(+1, +1) * dz).rgb;
     
-    bool exacter = am > 1.0;
+    bool exacter = quality > 1 || (quality == 1 && am > 1.0);
     
     if (exacter){
-        B  = tex2D(ReShade::BackBuffer, texcoord + float2(+0, -1) * dz).rgb;
-        D  = tex2D(ReShade::BackBuffer, texcoord + float2(-1, +0) * dz).rgb;
-        F  = tex2D(ReShade::BackBuffer, texcoord + float2(+1, +0) * dz).rgb;
-        H  = tex2D(ReShade::BackBuffer, texcoord + float2(+0, +1) * dz).rgb;
+        B  = tex2D(sam, texcoord + float2(+0, -1) * dz).rgb;
+        D  = tex2D(sam, texcoord + float2(-1, +0) * dz).rgb;
+        F  = tex2D(sam, texcoord + float2(+1, +0) * dz).rgb;
+        H  = tex2D(sam, texcoord + float2(+0, +1) * dz).rgb;
     }
     
     float3 res;
@@ -66,19 +99,19 @@ float3 dilateErode(float am, float2 texcoord) : SV_Target
     return res;
 }
 
-float3 DilationErosion(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
+float3 DilationErosionStepOne(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
 {
-    float3 res;
-    
-    if (type <= 0){
-        res = max(max(dilateErode(amount, texcoord), dilateErode(amount * 0.75, texcoord)), 
-                  max(dilateErode(amount * 0.5, texcoord), dilateErode(amount * 0.25, texcoord)));
-    } else {
-        res = min(min(dilateErode(amount, texcoord), dilateErode(amount * 0.75, texcoord)), 
-                  min(dilateErode(amount * 0.5, texcoord), dilateErode(amount * 0.25, texcoord)));
-    }
+    return dilateErode(1, ReShade::BackBuffer, texcoord);
+}
 
-    return res;
+float3 DilationErosionStepTwo(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
+{
+    return dilateErode(2, samOne, texcoord);
+}
+
+float3 DilationErosionStepThree(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
+{
+    return dilateErode(3, samTwo, texcoord);
 }
 
 technique DilationErosion
@@ -86,6 +119,18 @@ technique DilationErosion
     pass
     {
         VertexShader = PostProcessVS;
-        PixelShader  = DilationErosion;
+        PixelShader  = DilationErosionStepOne;
+        RenderTarget = texOne;
+    }
+    pass
+    {
+        VertexShader = PostProcessVS;
+        PixelShader  = DilationErosionStepTwo;
+        RenderTarget = texTwo;
+    }
+    pass
+    {
+        VertexShader = PostProcessVS;
+        PixelShader  = DilationErosionStepThree;
     }
 }
