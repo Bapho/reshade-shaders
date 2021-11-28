@@ -11,13 +11,13 @@ uniform int type <
 
 uniform int amount <
     ui_type = "slider";
-    ui_min = 0; ui_max = 20;
+    ui_min = 0; ui_max = 30;
     ui_label = "Amount";
 > = 10;
 
 uniform int multiplier <
     ui_type = "slider";
-    ui_min = 1; ui_max = 20;
+    ui_min = 1; ui_max = 30;
     ui_label = "Multiplier";
 > = 1;
 
@@ -35,6 +35,18 @@ uniform int quality <
     ui_label = "Quality";
 > = 1;
 
+uniform float depthBalance <
+    ui_type = "slider";
+    ui_min = -1.0; ui_max = 1.0; ui_step = 0.01;
+    ui_label = "Depth Balance";
+    ui_tooltip = "Balancing between far and near objects";
+> = 0;
+
+uniform bool useInDepthOnly <
+    ui_label = "Use in depth only";
+    ui_tooltip = "Fully near areas like some UI elements will be skipped";
+> = false;
+
 #include "ReShade.fxh"
 
 texture texOne { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
@@ -51,6 +63,25 @@ float3 dilateErode(int stepCount, sampler sam, float2 texcoord)
     }
     
     float am = amount / 32.0 * multiplier / (stepCount * stepCount);
+    
+    float d = ReShade::GetLinearizedDepth(texcoord);
+    if (useInDepthOnly && d == 1.0) {
+        am = 0.0;
+    } else if (depthBalance == 0.0) {
+    
+    } else {
+        d = 1.0 - d;
+        if (depthBalance > 0.5) {
+            d = lerp(d, pow(d, 128.0), (depthBalance * 2.0) - 1.0);
+        } else if (depthBalance > 0.0) {
+            d = lerp(1.0, d, depthBalance * 2.0);
+        } else if (depthBalance >= -0.5) {
+            d = lerp(1.0, d, depthBalance * -2.0);
+        } else {
+            d = lerp(d, 1.0 - d, (depthBalance * -2.0) - 1.0);
+        }
+        am *= d;
+    }
     
     float2 dz = float2(am / ReShade::ScreenSize.x, am / ReShade::ScreenSize.y);
     
