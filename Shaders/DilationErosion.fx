@@ -1,153 +1,167 @@
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// SmartNoise by Bapho - https://github.com/Bapho https://www.shadertoy.com/view/3tBGzw
+// DilationErosion by Bapho - https://github.com/Bapho https://www.shadertoy.com/user/Bapho
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// I created this shader because i did not liked the the noise behaviour
-// of most shaders. Temporal noise shaders, which are changing the noise
-// pattern every frame, are very noticeable when the "image isn't moving".
-// Fixed pattern noise shaders, which are never changing the noise pattern,
-// are very noticeable when the "image is moving". So i was searching a way
-// to bypass those disadvantages. I used the unique position of the current
-// texture in combination with the color and depth to get a unique seed
-// for the noise function. The result is a noise pattern that is only
-// changing when the color or depth of the position is changing.
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static const float PHI = 1.61803398874989484820459 * 00000.1; // Golden Ratio   
-static const float PI  = 3.14159265358979323846264 * 00000.1; // PI
-static const float SQ2 = 1.41421356237309504880169 * 10000.0; // Square Root of Two
-static const float SAT = 0.33333333333333333333334;
-static const int TYPE_MIXED = 0;
-static const int TYPE_GOLDEN = 1;
-static const int TYPE_BLUE = 2;
-
-uniform float noise <
-    ui_type = "drag";
-    ui_min = 0.0; ui_max = 4.0;
-    ui_step = 0.2;
-    ui_label = "Amount of noise";
-> = 1.0;
 
 uniform int type <
     ui_type = "combo";
-    ui_label = "Noise type";
-    ui_items = "Mixed\0Dynamic golden noise\0Fixed blue noise\0";
-    > = TYPE_MIXED;
-    
-uniform float balance <
-    ui_type = "drag";
-    ui_min = 1.0; ui_max = 6.0;
-    ui_step = 0.1;
-    ui_label = "Mix (golden - blue)";
-> = 4.0;
+    ui_items = "Dilation" "\0"
+               "Erosion" "\0";
+    ui_label = "Choose a type";
+> = 0;
 
-uniform bool compensateSaturation <
-    ui_type = "bool";
-    ui_label = "Compensate saturation";
-> = true;
+uniform int amount <
+    ui_type = "slider";
+    ui_min = 0; ui_max = 30;
+    ui_label = "Amount";
+> = 10;
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+uniform int multiplier <
+    ui_type = "slider";
+    ui_min = 1; ui_max = 30;
+    ui_label = "Multiplier";
+> = 1;
+
+uniform int steps <
+    ui_type = "slider";
+    ui_min = 1; ui_max = 3;
+    ui_label = "Steps";
+> = 3;
+
+uniform int quality <
+    ui_type = "combo";
+    ui_items = "Low" "\0"
+               "Medium" "\0"
+               "High" "\0";
+    ui_label = "Quality";
+> = 1;
+
+uniform float depthBalance <
+    ui_type = "slider";
+    ui_min = -1.0; ui_max = 1.0; ui_step = 0.01;
+    ui_label = "Depth Balance";
+    ui_tooltip = "Balancing between far and near objects";
+> = 0;
+
+uniform bool useInDepthOnly <
+    ui_label = "Use in depth only";
+    ui_tooltip = "Fully near areas like some UI elements will be skipped";
+> = false;
 
 #include "ReShade.fxh"
 
-texture texBlueNoise < source = "bapho_blue_noise.png"; > { Width = 256; Height = 256; Format = RGBA8; };
-sampler samplerBlueNoise { Texture = texBlueNoise; };
+texture texOne { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+texture texTwo { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+texture texThree { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; };
+sampler2D samOne { Texture = texOne; };
+sampler2D samTwo { Texture = texTwo; };
+sampler2D samThree { Texture = texThree; };
 
-float gold_noise(float2 coordinate, float seed){
-    return frac(tan(distance(coordinate*(seed+PHI), float2(PHI, PI)))*SQ2);
-}
-
-float getLuminance( in float3 x )
+float3 dilateErode(int stepCount, sampler sam, float2 texcoord)
 {
-    return dot( x, float3( 0.212656, 0.715158, 0.072186 ));
-}
-
-float3 sat( float3 res, float x )
-{
-    return min( lerp( getLuminance( res.xyz ), res.xyz, x + 1.0f ), 1.0f );
-}
-
-float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
-{
-    float amount = noise * 0.08;
-    float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+    if (stepCount > steps || amount <= 0.0) {
+        return tex2D(sam, texcoord).rgb;
+    }
     
-    // the luminance/brightness
-    float luminance = (0.2126 * color.r) + (0.7152 * color.g) + (0.0722 * color.b);
+    float am = amount / 32.0 * multiplier / (stepCount * stepCount);
     
-    // calculating a unique position
-    float uniquePos = ((ReShade::ScreenSize.x * pos.y) + pos.x) * 0.001;
+    float d = ReShade::GetLinearizedDepth(texcoord);
+    if (useInDepthOnly && d == 1.0) {
+        am = 0.0;
+    } else if (depthBalance == 0.0) {
     
-    // depth is also used
-    float depthSeed = ReShade::GetLinearizedDepth(texcoord) * ReShade::ScreenSize.y;
-    
-    // adjusting "noise contrast"
-    if (luminance < 0.5){
-        amount *= (luminance / 0.5);
     } else {
-        amount *= ((1.0 - luminance) / 0.5);
-    }
-    
-    // reddish pixels will get less noise 
-    float redDiff = color.r - ((color.g + color.b) / 2.0);
-    if (redDiff > 0.0){
-        amount *= (1.0 - (redDiff * 0.5));
-    }
-
-    // a very low unique seed will lead to slow noise pattern changes on slow moving color gradients
-    float uniqueSeed = ((luminance * ReShade::ScreenSize.y) + uniquePos + depthSeed) *
-    0.0001;
-    //0.00000000500001;
-    
-    // using a fictive coordinate as a workaround to fix a pattern bug
-    float2 coordinate = float2(pos.x, pos.y * 1.001253543);
-
-    // average noise luminance to subtract
-    float sub = (0.5 * amount);
-    float add;
-    float ran;
-    
-    // "noise clipping"
-    if (luminance - sub < 0.0){
-       amount *= (luminance / sub);
-       sub *= (luminance / sub);
-    } else if (luminance + sub > 1.0){
-        if (luminance > sub){
-            amount *= (sub / luminance);
-            sub *= (sub / luminance);
+        d = 1.0 - d;
+        if (depthBalance > 0.5) {
+            d = lerp(d, pow(d, 128.0), (depthBalance * 2.0) - 1.0);
+        } else if (depthBalance > 0.0) {
+            d = lerp(1.0, d, depthBalance * 2.0);
+        } else if (depthBalance >= -0.5) {
+            d = lerp(1.0, d, depthBalance * -2.0);
         } else {
-            amount *= (luminance / sub);
-            sub *= (luminance / sub);
+            d = lerp(d, 1.0 - d, (depthBalance * -2.0) - 1.0);
+        }
+        am *= d;
+    }
+    
+    float2 dz = float2(am / ReShade::ScreenSize.x, am / ReShade::ScreenSize.y);
+    
+    /*
+    
+    A | B | C
+    D | E | F
+    G | H | I
+    
+    */
+    
+    float3 A  = tex2D(sam, texcoord + float2(-1, -1) * dz).rgb;
+    float3 B;
+    float3 C  = tex2D(sam, texcoord + float2(+1, -1) * dz).rgb;
+    float3 D;
+    float3 E  = tex2D(sam, texcoord + float2(+0, +0) * dz).rgb;
+    float3 F;
+    float3 G  = tex2D(sam, texcoord + float2(-1, +1) * dz).rgb;
+    float3 H;
+    float3 I  = tex2D(sam, texcoord + float2(+1, +1) * dz).rgb;
+    
+    bool exacter = quality > 1 || (quality == 1 && am > 1.0);
+    
+    if (exacter){
+        B  = tex2D(sam, texcoord + float2(+0, -1) * dz).rgb;
+        D  = tex2D(sam, texcoord + float2(-1, +0) * dz).rgb;
+        F  = tex2D(sam, texcoord + float2(+1, +0) * dz).rgb;
+        H  = tex2D(sam, texcoord + float2(+0, +1) * dz).rgb;
+    }
+    
+    float3 res;
+    if (type <= 0){
+        if (exacter){
+            res = max(E, max(max(max(F, D), max(B, H)), max(max(A, I), max(C, G))));
+        } else {
+            res = max(E, max(max(A, I), max(C, G)));
+        }
+    } else {
+        if (exacter){
+            res = min(E, min(min(min(F, D), min(B, H)), min(min(A, I), min(C, G))));
+        } else {
+            res = min(E, min(min(A, I), min(C, G)));
         }
     }
-    
-    // calculating and adding/subtracting the golden noise
-    if (type != TYPE_BLUE) {
-        ran = gold_noise(coordinate, uniqueSeed);
-        float div = type == 1 ? 1 : balance;
-        add = saturate(ran * amount / div);
-        color.rgb += (add - sub / div);
-    }
-    
-    // calculating and adding/subtracting the blue noise
-    if (type != TYPE_GOLDEN) {
-        int blueNoiseX = (texcoord.x * BUFFER_WIDTH) % 256;
-        int blueNoiseY = (texcoord.y * BUFFER_HEIGHT) % 256;
-        color.rgb += (tex2Dfetch(samplerBlueNoise, int2(blueNoiseX, blueNoiseY)).rgb * amount.rrr - sub.rrr);
-    }
-    
-    // compensating the saturation since the noise is luma noise
-    if (compensateSaturation) {
-        color.rgb = sat(color.rgb, SAT * amount);
-    }
-    
-    return float4(color, 1.0);
+
+    return res;
 }
 
-technique SmartNoise
+float3 DilationErosionStepOne(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
 {
-        pass
+    return dilateErode(1, ReShade::BackBuffer, texcoord);
+}
+
+float3 DilationErosionStepTwo(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
+{
+    return dilateErode(2, samOne, texcoord);
+}
+
+float3 DilationErosionStepThree(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Target
+{
+    return dilateErode(3, samTwo, texcoord);
+}
+
+technique DilationErosion
+{
+    pass
     {
         VertexShader = PostProcessVS;
-        PixelShader  = SmartNoise;
+        PixelShader  = DilationErosionStepOne;
+        RenderTarget = texOne;
+    }
+    pass
+    {
+        VertexShader = PostProcessVS;
+        PixelShader  = DilationErosionStepTwo;
+        RenderTarget = texTwo;
+    }
+    pass
+    {
+        VertexShader = PostProcessVS;
+        PixelShader  = DilationErosionStepThree;
     }
 }
