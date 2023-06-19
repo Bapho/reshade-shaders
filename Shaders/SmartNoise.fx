@@ -49,7 +49,7 @@ uniform bool compensateSaturation <
 
 #include "ReShade.fxh"
 
-texture texBlueNoise < source = "bluenoise.png"; > { Width = 256; Height = 256; Format = RGBA8; };
+texture texBlueNoise < source = "bapho_blue_noise.png"; > { Width = 256; Height = 256; Format = RGBA8; };
 sampler samplerBlueNoise { Texture = texBlueNoise; };
 
 float gold_noise(float2 coordinate, float seed){
@@ -132,7 +132,7 @@ float4 SmartNoise(float4 pos : SV_Position, float2 texcoord : TEXCOORD0) : SV_Ta
     if (type != TYPE_GOLDEN) {
         int blueNoiseX = (texcoord.x * BUFFER_WIDTH) % 256;
         int blueNoiseY = (texcoord.y * BUFFER_HEIGHT) % 256;
-        color.rgb += (tex2Dfetch(samplerBlueNoise, int4(blueNoiseX, blueNoiseY, 0, 0)).rgb * amount - sub.rrr);
+        color.rgb += (tex2Dfetch(samplerBlueNoise, int2(blueNoiseX, blueNoiseY)).rgb * amount.rrr - sub.rrr);
     }
     
     // compensating the saturation since the noise is luma noise
